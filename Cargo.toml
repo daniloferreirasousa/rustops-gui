@@ -2,6 +2,7 @@
 name = "rustops-gui"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 authors = ["Danilo Ferreira Sousa <daniloasf@outlook.com>"]
 description = "Assistente de IA local focado em Engenharia e Segurança Ofensiva e Defensiva em Rust."
 
@@ -28,3 +29,10 @@ assets = [
     # NOVO: Copia o atalho para o menu de aplicativos do Linux
     ["rustops-gui.desktop", "usr/share/applications/", "644"],
 ]
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+
+# Injeta as dependências nativas do Windows forçando a feature 'winuser'
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.9", features = ["winuser"] }

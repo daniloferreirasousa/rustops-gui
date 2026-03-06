@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 /* * Projeto: RustOps GUI
-* Autor: Danilo Ferreira Sousa
+ * Autor: Danilo Ferreira Sousa
  * Descrição: Interface gráfica independente para rodar e interagir com modelos locais.
  */
 

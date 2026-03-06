@@ -26,7 +26,7 @@ pub fn send_to_ollama_chat(history: Vec<ChatMessage>, tx: Sender<String>) {
         Ok(res) => res,
         Err(e) => {
             let _ = tx.send(format!(" [Erro: {}]", e));
-            let _ = tx.send("[FIM_DA_MENSAGEM]".to_string());
+            let _ = tx.send("[FIM]".to_string());
             return;
         }
     };
@@ -49,5 +49,5 @@ pub fn send_to_ollama_chat(history: Vec<ChatMessage>, tx: Sender<String>) {
     }
 
     // Sinaliza para o app.rs que terminour de falar
-    let _ = tx.send("[FIM_DA_MENSAGEM]".to_string());
+    let _ = tx.send("[FIM]".to_string());
 }

@@ -29,23 +29,24 @@ impl RustOpsApp {
     pub fn new() -> Self {
         let (tx, rx) = channel::<String>();
 
+        // Thread rodando em segundo plano para não travar a interface
         thread::spawn(move || {
             // 1. Verifica/Instala Ollama
             let _ = tx.send("Verificando motor de IA (Ollama)...".to_string());
             if !utils::is_ollama_installed() {
-                let _ = tx.send("Instalando Ollama... Isso pode demorar alguns minutos.".to_string());
-                utils::install_ollama();
+                let _ = tx.send("Instalando Ollama... A janela de senha do sistema pode aparecer.".to_string());
+                let _ = utils::instalar_ollama(); // Usa a função multiplataforma que criamos
             }
 
             // 2. Inicia o serviço
-            let _ = tx.send("Iniciando serviço local...".to_string());
-            if !utils::ollama_is_runing() {
+            let _ = tx.send("Iniciando serviço local do motor de IA...".to_string());
+            if !utils::ollama_is_running() {
                 utils::start_ollama_serve();
                 utils::wait_for_ollama_ready(60);
             }
 
             // 3. Prepara o modelo
-            let _ = tx.send("Verificando modelos e dependências (pode demorar)...".to_string());
+            let _ = tx.send("Configurando modelo 'rustops' (isso pode demorar se for o primeiro download)...".to_string());
             utils::setup_custom_model();
 
             // 4. Sinaliza que terminou
@@ -72,14 +73,18 @@ impl RustOpsApp {
 // =========================================================
 impl RustOpsApp {
     fn desenhar_tela_carregamento(&mut self, ctx: &egui::Context) -> bool {
+        // Se já carregou tudo, avisa o update() para desenhar o resto do app
         if self.is_initialized {
             return false;
         }
 
+        // Verifica se há novas atualizações da thread de setup
         if let Some(rx) = &self.startup_receiver {
-            if let Ok(msg) = rx.try_recv() {
+            // Usamos 'while let' para ler todas as mensagens pendentes rapidamente
+            while let Ok(msg) = rx.try_recv() {
                 if msg == "CONCLUIDO" {
                     self.is_initialized = true;
+                    self.startup_receiver = None; // Limpa o canal da memória
                     return false;
                 } else {
                     self.startup_status_text = msg;
@@ -87,17 +92,30 @@ impl RustOpsApp {
             }
         }
 
+        // Desenha a tela de loading bonitona
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(ui.available_height() / 3.0);
-                ui.heading("🚀 RustOps");
+                ui.add_space(100.0);
+                
+                ui.heading(egui::RichText::new("🚀 RustOps").size(40.0).strong());
+                ui.add_space(40.0);
+                
+                ui.spinner(); // O círculo girando
                 ui.add_space(20.0);
-                ui.spinner();
-                ui.add_space(20.0);
-                ui.label(&self.startup_status_text);
+                
+                // O texto dinâmico que vem do utils.rs
+                ui.label(egui::RichText::new(&self.startup_status_text).size(16.0));
+                ui.add_space(30.0);
+                
+                // Aviso de segurança para acalmar o usuário ansioso
+                ui.label(
+                    egui::RichText::new("A primeira execução pode levar vários minutos (baixando motor de IA de 4GB).\nPor favor, não feche o aplicativo.")
+                        .color(egui::Color32::YELLOW)
+                );
             });
         });
 
+        // Força a tela a atualizar em 60fps enquanto carrega
         ctx.request_repaint();
         true 
     }
@@ -190,6 +208,16 @@ impl RustOpsApp {
                 }
             });
             ui.add_space(10.0);
+
+            // Assinatura
+            ui.vertical_centered(|ui| {
+                ui.label(
+                    egui::RichText::new("Desenvolvido por Danilo Ferreira Sousa | Versão: 1.1 | Motor: Mistral")
+                    .small()
+                    .color(egui::Color32::DARK_GRAY)
+                );
+            });
+            ui.add_space(10.0);
         });
     }
 
@@ -268,6 +296,8 @@ impl eframe::App for RustOpsApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         
         // 1. TELA DE CARREGAMENTO
+        // Se retornar true, significa que a tela de carregamento está ativa e
+        // as outras partes do app não devem ser desenhadas ainda.
         if self.desenhar_tela_carregamento(ctx) {
             return;
         }
