@@ -2,6 +2,12 @@
 
 **RustOps GUI** é uma interface gráfica nativa, rápida e independente desenvolvida em Rust para interagir com modelos de linguagem locais via Ollama. O foco do projeto é fornecer uma experiência "plug and play", gerenciando as suas próprias dependências de infraestrutura de forma invisível para o usuário final, operando 100% offline e com alta performance. Esta ferramenta foi desenhada estritamente para fins educacionais e de pesquisa em Segurança da Informação.
 
+### 🛡️ Por que escolher o RustOps?
+
+* **Privacidade Absoluta (100% Offline):** Seus dados, seus prompts e seus relatórios nunca saem da sua máquina. Não há telemetria, não há assinaturas mensais e nenhum dado é enviado para a nuvem. Todo o processamento e histórico ficam restritos ao seu disco rígido local.
+* **Ambiente Livre de Filtros Corporativos:** IAs comerciais frequentemente bloqueiam prompts legítimos de cibersegurança e análise de código. O RustOps utiliza um modelo local focado em engenharia, garantindo que suas pesquisas teóricas de *Red Teaming* não sejam interrompidas por restrições de APIs de terceiros.
+* **Zero Configuração:** Esqueça tutoriais complexos envolvendo Python, dependências ou Docker. O aplicativo é independente e gerencia sua própria infraestrutura em background com apenas um clique.
+
 ### ✨ Funcionalidades Atuais
 
 * **Segurança e Proteção Legal:**
