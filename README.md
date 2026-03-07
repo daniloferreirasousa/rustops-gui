@@ -29,10 +29,12 @@
     * **Múltiplos Chats:** Painel lateral intuitivo para criar, alternar, renomear e excluir diferentes tópicos de conversa.
     * **Persistência Local:** Todo o histórico de mensagens é salvo automaticamente no disco local, permitindo fechar e abrir o aplicativo sem perder dados.
     * **Memória de Contexto:** A IA compreende o fluxo da conversa enviando o histórico completo da sessão ativa.
-* **Streaming de Respostas em Tempo Real:**
-    * Efeito "máquina de escrever": as palavras aparecem na tela assim que são geradas, eliminando tempos de espera.
-* **Distribuição Profissional:**
+* **Streaming de Respostas em Tempo Real e Markdown:**
+    * Efeito "máquina de escrever": as palavras aparecem na tela assim que são geradas.
+    * Suporte completo a **Markdown**, exibindo textos formatados, listas e blocos de código nativamente.
+* **Distribuição Profissional Otimizada:**
     * Ocultação do terminal em ambiente de produção (aplicativo 100% gráfico).
+    * Compilação com otimizações extremas (`LTO`, `strip`) garantindo executáveis minúsculos.
     * Suporte a geração de instaladores `.deb` (Linux) e executáveis standalone `.exe` (Windows) a partir do mesmo código-fonte.
 
 ### 🗂️ Arquitetura do Projeto
@@ -51,31 +53,30 @@ rustops_gui/
 ```
 
 ## 🚀 Como Executar e Distribuir
-### Pré-requisitos de Desenvolvimento:
+Pré-requisitos de Desenvolvimento:
+Ter o Rust e o Cargo instalados.
 
-- Ter o Rust e o Cargo instalados.
-- Conexão com a internet na primeira execução (para baixar o Ollama e os modelos) e para o verificador de atualizações.
+Conexão com a internet na primeira execução (para baixar o Ollama e os modelos) e para o verificador de atualizações.
 
 ### Para Desenvolver (Modo Debug):
 ```Bash
 cargo run
 ```
-
-### Para Distribuir no Linux (Gerar Instalador .deb):
+Para Distribuir no Linux (Gerar Instalador .deb):
 Requer a instalação prévia da ferramenta: cargo install cargo-deb
 
 ```Bash
 cargo deb
 ```
-
 O arquivo de instalação estará disponível em **target/debian/**. Basta dar dois cliques para instalar no Ubuntu/Mint/Debian.
 
 ### Para Distribuir no Windows (Executável Final via Cross-Compile):
 
 ```Bash
-ca`go build --target x86_64-pc-windows-gnu --release
+cargo build --target x86_64-pc-windows-gnu --release
 ```
-O executável otimizado estará em **target/x86_64-pc-windows-gnu/release/rustops.exe**. O terminal de fundo é ocultado automaticamente graças à flag **windows_subsystem**.
+
+O executável otimizado estará em **target/x86_64-pc-windows-gnu/release/rustops-gui.exe**. O terminal de fundo é ocultado automaticamente graças à flag **windows_subsystem**.
 
 ### 🗺️ Roadmap (Evolução do Projeto)
 - [x] Streaming de texto em tempo real via Canais MPSC.
@@ -94,14 +95,21 @@ O executável otimizado estará em **target/x86_64-pc-windows-gnu/release/rustop
 
 - [x] Atualizador Automático: Verificação de novas versões via GitHub API sem travar a interface gráfica.
 
-- [ ] Renderização de Markdown: Implementar um parser rico na interface para exibir formatações (negrito, itálico) e blocos de código com syntax highlighting nativo.
+- [x] Renderização de Markdown: Implementar um parser rico na interface para exibir formatações (negrito, itálico) e blocos de código com syntax highlighting nativo.
 
 - [ ] Integração de Ícone no .exe (Windows): Utilizar build.rs e winres para embutir o ícone no binário do Windows Explorer.
 
+## 📄 Licença
 
-# ☕ Apoie o Projeto
-Se curtiu o projeto, me pague um café! Aponte a câmera do seu celular para o QR Code abaixo ou use a chave PIX:
+Este projeto está licenciado sob a **GNU General Public License v3.0 (GPLv3)**.
+
+Isso significa que o RustOps é e sempre será um software livre e de código aberto. Você é livre para usar, estudar, modificar e distribuir o software. No entanto, se você distribuir uma versão modificada, **é estritamente obrigatório** que o código-fonte modificado também seja disponibilizado publicamente sob a mesma licença GPLv3. 
+
+Para mais detalhes, consulte o arquivo [LICENSE](LICENSE) na raiz do projeto.
+
+## ☕ Apoie o Projeto
+Se curtiu o projeto, ele é gratuito e open-source! Considere me pagar um café apontando a câmera do seu celular para o QR Code abaixo ou usando a chave PIX:
 
 <img src="assets/pix.png" alt="QR Code PIX" width="200">
 
-**Chave PIX (Copia e Cola):** 00020126580014BR.GOV.BCB.PIX013693cc5dfd-0c3a-4e80-b087-4ac00a96b62e5204000053039865802BR5925DANILO DE ANDRADE FERREIR6007RESENDE62070503***63048F81
+* **Chave PIX (Copia e Cola)**: 00020126580014BR.GOV.BCB.PIX013693cc5dfd-0c3a-4e80-b087-4ac00a96b62e5204000053039865802BR5925DANILO DE ANDRADE FERREIR6007RESENDE62070503***63048F81
