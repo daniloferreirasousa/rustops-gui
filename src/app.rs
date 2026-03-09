@@ -38,34 +38,36 @@ pub struct RustOpsApp {
 // =========================================================
 impl RustOpsApp {
     pub fn new() -> Self {
-        // Canal do Ollama
         let (tx, rx) = channel::<String>();
-
-        // Canal do Atualizador:
         let (tx_update, rx_update) = channel::<String>();
 
-        // Thread rodando em segundo plano para não travar a interface
         thread::spawn(move || {
-            // 1. Verifica/Instala Ollama
-            let _ = tx.send("Verificando motor de IA (Ollama)...".to_string());
-            if !utils::is_ollama_installed() {
-                let _ = tx.send("Instalando Ollama... A janela de senha do sistema pode aparecer.".to_string());
-                let _ = utils::instalar_ollama(); // Usa a função multiplataforma de instalação
+            // Closure imediata para facilitar o tratamento de erros com '?'
+            let setup_result = (|| -> Result<(), String> {
+                let _ = tx.send("Verificando motod de IA...".to_string());
+                if !utils::is_ollama_installed() {
+                    let _ = tx.send("Instalando Ollama...".to_string());
+                    utils::instalar_ollama()?;
+                }
+
+                let _ = tx.send("Iniciando serviço...".to_string());
+                if !utils::ollama_is_running() {
+                    utils::start_ollama_serve();
+                    if !utils::wait_for_ollama_ready(60) {
+                        return Err("O motor de IA não respondeu a tempo.".to_string());
+                    }
+                }
+
+                // Nova chamada que utiliza o Result e o tx para status.
+                utils::setup_custom_model(&tx)?;
+                Ok(())
+            })();
+
+            if let Err(e) = setup_result {
+                let _ = tx.send(format!("ERRO_FATAL: {}", e));
+            } else {
+                let _ = tx.send("CONCLUIDO".to_string());
             }
-
-            // 2. Inicia o serviço
-            let _ = tx.send("Iniciando serviço local do motor de IA...".to_string());
-            if !utils::ollama_is_running() {
-                utils::start_ollama_serve();
-                utils::wait_for_ollama_ready(60);
-            }
-
-            // 3. Prepara o modelo
-            let _ = tx.send("Configurando modelo 'rustops' (isso pode demorar se for o primeiro download)...".to_string());
-            utils::setup_custom_model();
-
-            // 4. Sinaliza que terminou
-            let _ = tx.send("CONCLUIDO".to_string());
         });
 
         // Thread rodando em segundo plano (Verificador do GitHub)
@@ -198,6 +200,8 @@ impl RustOpsApp {
                     self.is_initialized = true;
                     self.startup_receiver = None; // Limpa o canal da memória
                     return false;
+                } else if msg.starts_with("ERRO_FATAL") {
+                    self.startup_status_text = msg.replace("ERRO_FATAL: ","Erro: ");
                 } else {
                     self.startup_status_text = msg;
                 }
@@ -208,22 +212,25 @@ impl RustOpsApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(100.0);
-                
                 ui.heading(egui::RichText::new("🚀 RustOps").size(40.0).strong());
                 ui.add_space(40.0);
                 
-                ui.spinner(); // O círculo girando
-                ui.add_space(20.0);
-                
+                // Se for um erro,  não mostra o spinner
+                if !self.startup_status_text.starts_with("Erro:") {
+                    ui.spinner();
+                    ui.add_space(20.0)
+                }
+
                 // O texto dinâmico que vem do utils.rs
                 ui.label(egui::RichText::new(&self.startup_status_text).size(16.0));
-                ui.add_space(30.0);
-                
-                // Aviso de segurança para acalmar o usuário ansioso
-                ui.label(
-                    egui::RichText::new("A primeira execução pode levar vários minutos (baixando motor de IA de 4GB).\nPor favor, não feche o aplicativo.")
-                        .color(egui::Color32::YELLOW)
-                );
+
+                if self.startup_status_text.starts_with("Erro:") {
+                    ui.add_space(30.0);
+                    ui.label(egui::RichText::new("Por favor, verificque sua internet e reinicie o aplicativo.").color(egui::Color32::LIGHT_RED));
+                } else {
+                    ui.add_space(30.0);
+                    ui.label(egui::RichText::new("A primeira execução pode levar vários minutos.\nPor favor, não feche o aplicativo.").color(egui::Color32::LIGHT_YELLOW));
+                }
             });
         });
 
@@ -388,30 +395,7 @@ impl RustOpsApp {
                 .auto_shrink([false; 2])
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
-                    //  for msg in &self.db.get_sessao_ativa_mut().mensagens {
-                    //     if msg.role == "system" { continue; }
-
-                    //     let mut texto_exibicao = if msg.role == "user" {
-                    //         format!("Você: {}", msg.content)
-                    //     } else {
-                    //         format!("RustOps: {}", msg.content)
-                    //     };
-
-                    //     let cor_texto = if msg.role == "user" {
-                    //         egui::Color32::LIGHT_BLUE
-                    //     } else {
-                    //         egui::Color32::LIGHT_GREEN
-                    //     };
-
-                    //     ui.add(
-                    //         egui::TextEdit::multiline(&mut texto_exibicao)
-                    //             .text_color(cor_texto)
-                    //             .frame(false)
-                    //             .desired_width(ui.available_width())
-                    //     );
-                    //     ui.add_space(5.0);
-                    // }
-
+                    
                     // ID da sessão atual
                     let id_sessao = self.db.sessao_ativa_id;
 
