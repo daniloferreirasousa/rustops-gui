@@ -18,7 +18,7 @@ pub fn desenhar_rodape(app: &mut RustOpsApp, ctx: &egui::Context) {
             // 1. Área de rolagem para o texto (limita o crescimento vertical)
             egui::ScrollArea::vertical()
                 .max_height(altura_maxima_input)
-                .id_source("scroll_input_usuario")
+                .id_salt("scroll_input_usuario")
                 .show(ui, |ui| {
                     let response = ui.add(
                         egui::TextEdit::multiline(&mut app.user_input)
@@ -76,19 +76,59 @@ pub fn desenhar_rodape(app: &mut RustOpsApp, ctx: &egui::Context) {
             }
         });
         ui.add_space(10.0);
+        ui.separator();
+        ui.add_space(4.0);
 
-        // Assinatura
-        ui.vertical_centered(|ui| {
-            ui.label(
-                egui::RichText::new(format!("Desenvolvido por {}", env!("CARGO_PKG_AUTHORS")))
-                .small()
-                .color(egui::Color32::DARK_GRAY)
-            );
-            ui.label(egui::RichText::new(format!("RustOps v{}", env!("CARGO_PKG_VERSION")))
-            .small()
-            .color(egui::Color32::DARK_GRAY)
-        );
+        ui.horizontal(|ui| {
+            // 1. Status de Hardware (Esquerda)
+            ui.spacing_mut().item_spacing.x = 15.0; // Espaço entre os itens
+
+
+            // CPU com cor dinâmica
+            let cpu_cor = if app.cpu_usage > 70.0 {
+                egui::Color32::from_rgb(255,100,100) // Vermelho se estiver alto
+            } else {
+                egui::Color32::DARK_GRAY
+            };
+
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("CPU:")
+                    .small()
+                    .color(cpu_cor));
+                ui.label(
+                    egui::RichText::new(format!("{:.1}%", app.cpu_usage))
+                    .small()
+                    .color(cpu_cor)
+                );
+            });
+
+            // RAM
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("RAM:")
+                    .small()
+                    .color(egui::Color32::DARK_GRAY));
+                ui.label(
+                    egui::RichText::new(format!("{:.1} GB", app.ram_usage))
+                    .small()
+                    .color(egui::Color32::DARK_GRAY)
+                );
+            });
+
+            // 2. Assinatura e Versão (Direita)
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(
+                    egui::RichText::new(format!("v{}", env!("CARGO_PKG_VERSION")))
+                        .small()
+                        .color(egui::Color32::from_rgb(80,80,80))
+                );
+
+                ui.label(
+                    egui::RichText::new(format!("| {} |", env!("CARGO_PKG_AUTHORS")))
+                    .small()
+                    .color(egui::Color32::DARK_GRAY)
+                );
+            });
         });
-        ui.add_space(10.0);
+        ui.add_space(6.0);
     });
 }

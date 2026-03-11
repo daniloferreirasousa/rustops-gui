@@ -2,6 +2,7 @@ use eframe::egui;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use egui_commonmark::{CommonMarkCache};
+use sysinfo::System;
 
 use crate::storage::{AppDatabase};
 use crate::utils;
@@ -35,6 +36,11 @@ pub struct RustOpsApp {
     
     // Contrrole de envio para o Input Multiline
     pub requisitou_envio: bool,
+
+    // Monitor de Hardware
+    pub sys: System,
+    pub cpu_usage: f32,
+    pub ram_usage: f32, // em GB
 }
 
 // =========================================================
@@ -96,6 +102,9 @@ impl RustOpsApp {
             }
         });
 
+        let mut sys = System::new_all();
+        sys.refresh_all(); // Faz uma leitura inicial
+
         Self {
             user_input: String::new(),
             db: AppDatabase::carregar(),
@@ -112,9 +121,13 @@ impl RustOpsApp {
             mostrar_janela_apoio: false,
             markdown_cache: CommonMarkCache::default(),
             requisitou_envio: false,
+            sys,
+            cpu_usage: 0.0,
+            ram_usage: 0.0,
         }
     }
 }
+
 
 // =========================================================
 // O LOOP PRINCIPAL DA INTERFACE (Módulo eframe)
@@ -122,6 +135,11 @@ impl RustOpsApp {
 impl eframe::App for RustOpsApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
+        // 0. DADOS DO PC
+        let (cpu, ram) = crate::system_stats::obter_dados_hardware(&mut self.sys);
+        self.cpu_usage = cpu;
+        self.ram_usage = ram;
+        
         // 1. TELAS DE BLOQUEIO (Loading e Termos)
         if ui::splash::desenhar_tela_carregamento(self, ctx) { return; }
         if ui::terms::termos_de_uso(self, ctx) { return; }

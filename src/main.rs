@@ -10,6 +10,7 @@ mod ollama;
 mod storage;
 mod utils;
 pub mod ui;
+mod system_stats;
 
 use app::RustOpsApp;
 use eframe::egui;
