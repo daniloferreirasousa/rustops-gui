@@ -3041,6 +3041,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo",
+ "thiserror 2.0.18",
  "webbrowser 0.8.15",
  "winapi",
  "winres",

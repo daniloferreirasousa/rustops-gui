@@ -10,6 +10,8 @@ use std::thread;
 use std::time::Duration;
 use std::sync::mpsc::Sender;
 
+use crate::errors::RustOpsError;
+
 pub fn tem_espaco_suficiente() -> bool {
     let disks = Disks::new_with_refreshed_list();
 
@@ -34,10 +36,13 @@ pub fn is_ollama_installed() -> bool {
 // VERSÃO LINUX
 // =========================================== 
 #[cfg(target_os = "linux")]
-pub fn instalar_ollama() -> Result<(), String> {
+pub fn instalar_ollama() -> Result<(), RustOpsError> {
+    if is_ollama_installed() {
+        return Ok(()); 
+    }
 
     if !tem_espaco_suficiente() {
-        return Err("Espaço insuficiente. Libere pelo menos 10GB e reinicie o RustOps".to_string());
+        return Err(RustOpsError::InsufficientDiskSpace { required: 10 });
     }
 
     let status = Command::new("pkexec")
@@ -45,12 +50,12 @@ pub fn instalar_ollama() -> Result<(), String> {
         .arg("-c")
         .arg("curl -fsSL http://ollama.com/install.sh | sh")
         .status()
-        .map_err(|e| format!("Falha ao executar o pkexec no Linux: {}", e))?;
+        .map_err(|e| RustOpsError::CommandExecution(e.to_string()))?;
 
     if status.success() {
         Ok(())
     } else {
-        Err("Usuário cancelou a senha de instalação, falhou.".to_string())
+        Err(RustOpsError::CommandExecution("Falha na instalação".to_string()))
     }
 }
 
@@ -80,9 +85,13 @@ pub fn start_ollama_serve() {
 // VERSÃO WINDOWS
 // ============================================
 #[cfg(target_os = "windows")]
-pub fn instalar_ollama() -> Result<(), String> {
+pub fn instalar_ollama() -> Result<(), RustOpsError> {
+    if is_ollama_installed() {
+        return Ok(());
+    }
+
     if !tem_espaco_suficiente() {
-        return Err("Espaço insuficiente. Libere pelo menos 10GB e reinicie o RustOps.".to_string());
+        return Err(RustOpsError::InsufficientDiskSpace { required: 10 });
     }
 
     const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -98,12 +107,12 @@ pub fn instalar_ollama() -> Result<(), String> {
     cmd.args(["-NoProfile", "-NonInteractive", "-Command", script_powershell]);
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let status = cmd.status().map_err(|e| e.to_string())?;
+    let status = cmd.status().map_err(|e| RustOpsError::CommandExecution(e.to_string()))?;
 
     if status.success() {
         Ok(())
     } else {
-        Err("Instalação falhou".to_string())
+        Err(RustOpsError::CommandExecution("Falha na instalação.".to_string()))
     }
 }
 
@@ -125,12 +134,15 @@ pub fn start_ollama_serve() {
 // =====================================
 // CÓDIGO COMUM (AMBOS OS SISTEMAS)
 // =====================================
-pub fn setup_custom_model(tx: &Sender<String>) -> Result<(), String> {
+pub fn setup_custom_model(tx: &Sender<String>) -> Result<(), RustOpsError> {
     let base_model = "dolphin3:8b";
 
 
     if !ollama_is_running() {
-        return Err("O servidor Ollama não está respondendo.".to_string());
+        let _ = tx.send("Aguardando servidor Ollama iniciar...".to_string());
+        if !wait_for_ollama_ready(10) {
+            return Err(RustOpsError::OllamaNotRunning);
+        }
     }
 
     // 1. Verifica se já existe
@@ -138,7 +150,7 @@ pub fn setup_custom_model(tx: &Sender<String>) -> Result<(), String> {
     let check = Command::new("ollama")
         .args(&["list"])
         .output()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| RustOpsError::CommandExecution(e.to_string()))?;
 
     let output_str = String::from_utf8_lossy(&check.stdout);
     if output_str.contains("rustops") {
@@ -169,7 +181,7 @@ pub fn setup_custom_model(tx: &Sender<String>) -> Result<(), String> {
             thread::sleep(Duration::from_secs(5));
 
             if tentativas == max_tentativas {
-                return Err("falha persistente na conexão. Tente rodar 'ollama pull dolphin3:8b' no terminal.".to_string());
+                return Err(RustOpsError::ModelDownloadError("dolphin3:8b".to_string()));
             }
 
             
@@ -193,21 +205,21 @@ pub fn setup_custom_model(tx: &Sender<String>) -> Result<(), String> {
     "#, base_model);
 
     let tmp_file = "ModelFile_rustops_temp";
-    fs::write(tmp_file, modelfile_content).map_err(|e| e.to_string())?;
+    fs::write(tmp_file, modelfile_content).map_err(|e| RustOpsError::CommandExecution(e.to_string()))?;
 
     let status = Command::new("ollama")
         .args(&["create", "rustops", "-f", tmp_file])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| RustOpsError::CommandExecution(e.to_string()))?;
 
     let _ = fs::remove_file(tmp_file);
 
     if status.success() {
         Ok(())
     } else {
-        Err("Falha ao configurar o modelo RustOps.".to_string())
+        Err(RustOpsError::ModelCreationError("rustops".to_string()))
     }
 }
 

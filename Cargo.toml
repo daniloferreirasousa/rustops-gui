@@ -15,6 +15,7 @@ image = "0.24"
 webbrowser = "0.8"
 egui_commonmark = "0.22.0"
 sysinfo = "0.38.4"
+thiserror = "2.0"
 
 [build-dependencies]
 winres = "0.1"

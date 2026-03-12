@@ -7,6 +7,7 @@ use sysinfo::System;
 use crate::storage::{AppDatabase};
 use crate::utils;
 use crate::ui;
+use crate::errors::RustOpsError;
 
 pub struct RustOpsApp {
     pub user_input: String,
@@ -51,7 +52,7 @@ impl RustOpsApp {
 
         thread::spawn(move || {
             // Closure imediata para facilitar o tratamento de erros com '?'
-            let setup_result = (|| -> Result<(), String> {
+            let setup_result = (|| -> Result<(), RustOpsError> {
                 let _ = tx.send("Verificando motod de IA...".to_string());
                 if !utils::is_ollama_installed() {
                     let _ = tx.send("Instalando Ollama...".to_string());
@@ -62,7 +63,7 @@ impl RustOpsApp {
                 if !utils::ollama_is_running() {
                     utils::start_ollama_serve();
                     if !utils::wait_for_ollama_ready(60) {
-                        return Err("O motor de IA não respondeu a tempo.".to_string());
+                        return Err(RustOpsError::Generic("O motor de IA não respondeu a tempo.".to_string()));
                     }
                 }
 

@@ -11,6 +11,7 @@ mod storage;
 mod utils;
 pub mod ui;
 mod system_stats;
+mod errors;
 
 use app::RustOpsApp;
 use eframe::egui;
@@ -41,7 +42,7 @@ fn main() -> eframe::Result<()> {
         .with_icon(carregar_icone());
 
     eframe::run_native(
-        "RustOps - Ferramenta de IA Red Team",
+        "RustOps GUI - Ferramenta de IA Red Team",
         options,
         Box::new(|_cc| Ok(Box::new(RustOpsApp::new()))),
     )
