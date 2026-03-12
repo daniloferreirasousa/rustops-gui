@@ -35,6 +35,11 @@ pub fn is_ollama_installed() -> bool {
 // =========================================== 
 #[cfg(target_os = "linux")]
 pub fn instalar_ollama() -> Result<(), String> {
+
+    if !tem_espaco_suficiente() {
+        return Err("Espaço insuficiente. Libere pelo menos 10GB e reinicie o RustOps".to_string());
+    }
+
     let status = Command::new("pkexec")
         .arg("sh")
         .arg("-c")
