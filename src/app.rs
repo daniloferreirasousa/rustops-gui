@@ -55,7 +55,8 @@ impl RustOpsApp {
 
         thread::spawn(move || {
             // Closure imediata para facilitar o tratamento de erros com '?'
-            let setup_result = (|| -> Result<(), RustOpsError> {               
+            let setup_result = (|| -> Result<(), RustOpsError> {
+                
                 let _ = tx.send("Verificando motod de IA...".to_string());
                 if !utils::is_ollama_installed() {
                     let _ = tx.send("Instalando Ollama...".to_string());

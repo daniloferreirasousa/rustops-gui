@@ -9,6 +9,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 use std::sync::mpsc::Sender;
+use eframe::egui;
 
 use crate::errors::RustOpsError;
 
@@ -30,6 +31,28 @@ pub fn is_ollama_installed() -> bool {
         .stderr(Stdio::null())
         .status()
         .is_ok()
+}
+
+pub fn configurar_fontes(ctx: &egui::Context) {
+    let mut fonts = egui::FontDefinitions::default();
+
+    fonts.font_data.insert(
+        "emoji_font".to_owned(),
+        egui::FontData::from_static(include_bytes!("../assets/NotoEmoji-Regular.ttf")).into(),
+
+    );
+
+    fonts.families
+        .entry(egui::FontFamily::Proportional)
+        .or_default()
+        .push("emoji_font".to_owned());
+
+    fonts.families
+        .entry(egui::FontFamily::Monospace)
+        .or_default()
+        .push("emoji_font".to_owned());
+
+    ctx.set_fonts(fonts);
 }
 
 // ===========================================

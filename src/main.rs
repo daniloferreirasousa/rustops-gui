@@ -44,6 +44,10 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "RustOps GUI - Ferramenta de IA Red Team",
         options,
-        Box::new(|_cc| Ok(Box::new(RustOpsApp::new()))),
+        Box::new(|cc| {
+            utils::configurar_fontes(&cc.egui_ctx);
+
+            Ok(Box::new(RustOpsApp::new()))
+        }),
     )
 }
